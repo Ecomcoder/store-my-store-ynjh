@@ -2,29 +2,27 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { medusaClient } from '@/lib/medusa-client'
+import { useRegion } from './use-region'
 
 export function useProduct(handle: string) {
+  const { regionId } = useRegion()
+
   return useQuery({
-    queryKey: ['product', handle],
+    queryKey: ['product', handle, regionId],
     queryFn: async () => {
-      try {
-        const response = await medusaClient.store.product.list({
-          handle,
-        })
+      if (!regionId) throw new Error('No region available')
 
-        const product = response.products?.[0]
+      const response = await medusaClient.store.product.list({
+        handle,
+        region_id: regionId,
+        fields: '*variants.calculated_price',
+      })
 
-        if (!product) {
-          throw new Error('Product not found')
-        }
-
-        return product
-      } catch (error) {
-        console.error(`Error fetching product ${handle}:`, error)
-        throw error
-      }
+      const product = response.products?.[0]
+      if (!product) throw new Error('Product not found')
+      return product
     },
-    enabled: !!handle,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!handle && !!regionId,
+    staleTime: 1000 * 60 * 5,
   })
 }

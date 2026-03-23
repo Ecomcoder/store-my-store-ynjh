@@ -15,7 +15,7 @@ async function getProduct(handle: string) {
     const response = await medusaClient.store.product.list({
       handle,
       region_id: regionId,
-      fields: '+variants.calculated_price',
+      fields: '*variants.calculated_price',
     })
     return response.products?.[0] || null
   } catch (error) {
