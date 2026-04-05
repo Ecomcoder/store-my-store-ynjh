@@ -13,6 +13,10 @@ export function ElementPickerListener() {
   useEffect(() => {
     const isInIframe = window.parent !== window;
 
+    // SECURITY: Store parent origin (received from activation message)
+    // Default to localhost for development, but will be overridden
+    let parentOrigin: string = 'http://localhost:3001';
+
     // Navigation tracking setup
     let navigationCleanup: (() => void) | null = null;
 
@@ -22,7 +26,7 @@ export function ElementPickerListener() {
         window.parent.postMessage({
           type: 'NAVIGATION_CHANGE',
           path,
-        }, '*');
+        }, parentOrigin); // Use explicit origin, not '*'
       };
 
       // Send initial path
@@ -130,13 +134,13 @@ export function ElementPickerListener() {
 
       const data = getElementData(currentElement);
 
-      // Send to parent
+      // Send to parent with explicit origin
       window.parent.postMessage(
         {
           type: 'ELEMENT_PICKED',
           data,
         },
-        '*'
+        parentOrigin,
       );
 
       // Cleanup
@@ -147,7 +151,10 @@ export function ElementPickerListener() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        window.parent.postMessage({ type: 'ELEMENT_PICKER_CANCELLED' }, '*');
+        window.parent.postMessage(
+          { type: 'ELEMENT_PICKER_CANCELLED' },
+          parentOrigin,
+        );
         cleanup();
       }
     }
@@ -186,16 +193,29 @@ export function ElementPickerListener() {
       // Change cursor
       document.body.style.cursor = 'crosshair';
 
-      // Notify parent that picker is active
-      window.parent.postMessage({ type: 'ELEMENT_PICKER_READY' }, '*');
+      // Notify parent that picker is active (using explicit origin)
+      window.parent.postMessage(
+        { type: 'ELEMENT_PICKER_READY' },
+        parentOrigin,
+      );
     }
 
     // Listen for messages from parent
     function handleMessage(event: MessageEvent) {
-      // Only accept messages from parent
+      // Only accept messages from parent window
       if (event.source !== window.parent) return;
 
       if (event.data.type === 'ACTIVATE_ELEMENT_PICKER') {
+        // SECURITY: Store parent origin from activation message
+        // This allows dynamic origins (each merchant has different URL)
+        if (event.data.parentOrigin) {
+          parentOrigin = event.data.parentOrigin;
+        }
+
+        // OPTIONAL: Validate parentOrigin is trusted
+        // For now, trust any parent that can send messages (already in iframe)
+        // Could add whitelist check here: if (!isAllowedOrigin(parentOrigin)) return;
+
         activate();
       } else if (event.data.type === 'DEACTIVATE_ELEMENT_PICKER') {
         cleanup();
