@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Facebook } from 'lucide-react'
 import { clearConsent } from '@/lib/cookie-consent'
 import { usePolicies } from '@/hooks/use-policies'
 
@@ -54,6 +55,17 @@ export default function Footer() {
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed max-w-xs">
               Curated products crafted with care. Quality you can feel, design you can see.
             </p>
+            <div className="mt-5 flex items-center gap-3">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+              >
+                <Facebook size={16} />
+              </a>
+            </div>
           </div>
 
           {/* Shop Links */}
